@@ -1,8 +1,7 @@
 // scripts.js
 
-import * as nwabisa from 'nwabisa'
-import * as johannes from 'johannes'
-import * as alex from 'alex'
+import { role as nwabisaRole} from "./nwabisa.js";
+import { role as johannesRole} from "./johannes.js";
+import { role as alexRole} from "./alex.js";
 
-
-console.log('Roles:', nwabisa.role, johannes.role, alex.role)
+console.log('Roles:', nwabisaRole, johannesRole, alexRole)
