@@ -13,5 +13,5 @@ if (hourOfDay !== null && minuteOfDay !== null && hourOfDay == 0 && minuteOfDay 
     const startingAfterTax = salary * (1 - taxAsDecimal)
 	var balance = startingAfterTax - transport - food - rent
 	
-console.log(balance.toFixed(3))
+console.log(balance.toFixed(2))
     }
