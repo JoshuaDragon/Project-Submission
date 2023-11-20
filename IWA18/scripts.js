@@ -11,125 +11,164 @@
  */
 const handleDragOver = (event) => {
     event.preventDefault();
-    const path = event.path || event.composedPath()
-    let column = null
-
+    const path = event.path || event.composedPath();
+    let column = null;
+  
+    // Loop through the event path to find an element with a data-area attribute
     for (const element of path) {
-        const { area } = element.dataset
-        if (area) {
-            column = area
-            break;
-        }
+      const { area } = element.dataset;
+      if (area) {
+        column = area;
+        break;
+      }
     }
+  
+    // If no column is found, exit the function
+    if (!column) return;
 
-    if (!column) return
-    updateDragging({ over: column })
-    updateDraggingHtml({ over: column })
-}
+    // Update the dragging state and HTML to reflect the new column
+    updateDragging({ over: column });
+    updateDraggingHtml({ over: column });
+  };
+
+// Event listener for help toggle button
+const handlerHelpToggle = document.querySelector('[data-help]');
+const helpOverlay = document.querySelector('[data-help-overlay]');
+const helpCancelButton = document.querySelector('[data-help-cancel]');
+
+handlerHelpToggle.addEventListener('click', () => {
+    helpOverlay.showModal(); // Display the help overlay
+});
+
+helpCancelButton.addEventListener('click', () => {
+    helpOverlay.close(); // Close the help overlay
+    html.other.add.focus() // Set focus to another HTML element
+});
+
+// Event listener for add toggle button
+const handlerAddToggle = document.querySelector('[data-add]');
+const addOverlay = document.querySelector('[data-add-overlay]');
+const addCancelButton = document.querySelector('[data-add-cancel]');
+const addForm = document.querySelector('[data-add-form]');
+const orderText = document.querySelector('[data-order-text]');
+const associatedTable = document.querySelector('[data-associated-table]');
+
+handlerAddToggle.addEventListener('click', () => {
+  addOverlay.showModal()}); // Display the add overlay
+  html.other.add.focus() // Set focus to another HTML element
 
 
-const handleDragStart = (event) => {
-    const orderId = event.target.dataset.id;
-    updateDragging({ source: orderId });
+addCancelButton.addEventListener('click', () => {
+   event.preventDefault();
+    addOverlay.close() // Close the add overlay
+});
+
+
+addForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    handleAddSubmit();
+});
+
+const openAddOrderOverlay = () => {
+    addOverlay.showModal();
+    orderText.value = '';
+    associatedTable.value = '';
+    orderText.focus();
 };
 
-const handleDragEnd = (event) => {
-    updateDragging({ over: null });
-    updateDraggingHtml({});
-};
-
-const handleHelpToggle = (event) => {
-    const isHelpOpen = html.help.overlay.hasAttribute('open');
-    if (isHelpOpen) {
-        html.help.overlay.close();
-    } else {
-        html.help.overlay.showModal();
-    }
-    // Reset focus to "Add Order" button
-    html.other.add.focus();
-};
-
-const handleAddToggle = (event) => {
-    const isAddOpen = html.add.overlay.hasAttribute('open');
-    if (isAddOpen) {
-        html.add.overlay.close();
-        // Reset focus to "Add Order" button
-        html.other.add.focus();
-    } else {
-        // Clear the form when opening
-        html.add.form.reset();
-        html.add.overlay.showModal();
-    }
+const closeAddOrderOverlay = () => {
+    addOverlay.close();
+    focusAddOrderButton();
 };
 
 const handleAddSubmit = (event) => {
     event.preventDefault();
-
+  
     const title = html.add.title.value;
     const table = html.add.table.value;
+  
+    const newOrder = createOrderData({ title, table });
+  
+    state.orders[newOrder.id] = newOrder;
+  
+    const orderElement = createOrderHtml(newOrder);
+  
+    html.columns.ordered.appendChild(orderElement);
+  
+    handleAddToggle.close();
+  
+    html.add.title.value = '';
+    html.add.table.value = '';
+  };
+  html.add.form.addEventListener('submit', handleAddSubmit);
 
-    if (title && table) {
-        const newOrder = createOrderData({ title, table, column: 'ordered' });
-        state.orders[newOrder.id] = newOrder;
-        moveToColumn(newOrder.id, 'ordered');
-    }
-
-    html.add.overlay.close();
-};
-
-const handleEditToggle = (event) => {
+  
+  
+  const handleEditToggle = (event) => {
     const orderId = event.target.dataset.id;
     const order = state.orders[orderId];
+  
+    if (html.edit.overlay.classList.contains('active')) {
 
-    if (order) {
-        html.edit.id.value = orderId;
-        html.edit.title.value = order.title;
-        html.edit.table.value = order.table;
-        html.edit.column.value = order.column;
-        html.edit.overlay.showModal();
+      html.edit.overlay.classList.remove('active');
+    } else {
+      html.edit.overlay.classList.add('active');
+      html.edit.title.value = order.title;
+      html.edit.table.value = order.table;
+      html.edit.id.value = orderId;
+      html.edit.column.value = order.column;
+      html.edit.title.focus();
     }
+  };
+  
+  for (const orderElement of document.querySelectorAll('.order')) {
+    orderElement.addEventListener('click', handleEditToggle);
+  }
+  
+  html.edit.cancel.addEventListener('click', handleEditToggle);
+editCancelButton.addEventListener('click', () => {
+    closeEditOrderOverlay();
+});
+
+editForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    handleEditSubmit();
+});
+
+editDeleteButton.addEventListener('click', () => {
+    handleDelete();
+});
+
+const openEditOrderOverlay = () => {
+    editOverlay.showModal();
 };
 
-const handleEditSubmit = (event) => {
-    event.preventDefault();
+const closeEditOrderOverlay = () => {
+    editOverlay.close();
+};
 
-    const orderId = html.edit.id.value;
-    const order = state.orders[orderId];
+const handleEditSubmit = () => {
+    const updatedOrder = {
+    };
 
-    if (order) {
-        order.title = html.edit.title.value;
-        order.table = html.edit.table.value;
-        const newColumn = html.edit.column.value;
-        moveToColumn(orderId, newColumn);
-    }
 
-    html.edit.overlay.close();
+    closeEditOrderOverlay();
 };
 
 const handleDelete = (event) => {
+    event.preventDefault();
+    
     const orderId = html.edit.id.value;
-    delete state.orders[orderId];
-    html.edit.overlay.close();
+    const orderElement = document.querySelector(`[data-id="${orderId}"]`);
+  
+    if (orderElement) {
+      orderElement.remove();
+    }
+    
+    handleEditToggle();
+  };
+  
+
+const focusAddOrderButton = () => {
+    addOrderButton.focus();
 };
-
-
-html.add.cancel.addEventListener('click', handleAddToggle)
-html.other.add.addEventListener('click', handleAddToggle)
-html.add.form.addEventListener('submit', handleAddSubmit)
-
-html.other.grid.addEventListener('click', handleEditToggle)
-html.edit.cancel.addEventListener('click', handleEditToggle)
-html.edit.form.addEventListener('submit', handleEditSubmit)
-html.edit.delete.addEventListener('click', handleDelete)
-
-html.help.cancel.addEventListener('click', handleHelpToggle)
-html.other.help.addEventListener('click', handleHelpToggle)
-
-for (const htmlColumn of Object.values(html.columns)) {
-    htmlColumn.addEventListener('dragstart', handleDragStart)
-    htmlColumn.addEventListener('dragend', handleDragEnd)
-}
-
-for (const htmlArea of Object.values(html.area)) {
-    htmlArea.addEventListener('dragover', handleDragOver)
-}
